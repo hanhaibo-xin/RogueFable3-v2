@@ -317,11 +317,53 @@ gs.createTextButton = function (x, y, text, callBack, context, group) {
 	button.button.scale.setTo(SCALE_FACTOR, SCALE_FACTOR);
     button.button.smoothed = false;
     button.button.anchor.setTo(0.5, 0.5);
+    
+    // Add shadow effect
+    button.button.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    button.button.shadowBlur = 10;
+    button.button.shadowOffsetX = 3;
+    button.button.shadowOffsetY = 3;
+    
+    // Add hover and click effects
+    button.button.onInputOver.add(function() {
+        button.button.alpha = 1.0;
+        button.button.scale.setTo(SCALE_FACTOR * 1.05, SCALE_FACTOR * 1.05);
+        button.text.alpha = 1.0;
+    }, this);
+    
+    button.button.onInputOut.add(function() {
+        button.button.alpha = 0.9;
+        button.button.scale.setTo(SCALE_FACTOR, SCALE_FACTOR);
+        button.text.alpha = 0.9;
+    }, this);
+    
+    button.button.onInputDown.add(function() {
+        button.button.scale.setTo(SCALE_FACTOR * 0.95, SCALE_FACTOR * 0.95);
+        button.button.shadowOffsetX = 1;
+        button.button.shadowOffsetY = 1;
+    }, this);
+    
+    button.button.onInputUp.add(function() {
+        button.button.scale.setTo(SCALE_FACTOR * 1.05, SCALE_FACTOR * 1.05);
+        button.button.shadowOffsetX = 3;
+        button.button.shadowOffsetY = 3;
+    }, this);
+    
+    // Set initial alpha
+    button.button.alpha = 0.9;
+    
     button.group.add(button.button);
     
     // Create text:
     button.text = game.add.text(-1, 3, text, SMALL_WHITE_FONT);
 	button.text.anchor.setTo(0.5, 0.5);
+    
+    // Add shadow to text
+    button.text.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    button.text.shadowBlur = 5;
+    button.text.shadowOffsetX = 2;
+    button.text.shadowOffsetY = 2;
+    button.text.alpha = 0.9;
 	
 	//this.centerText(button.text);
     
