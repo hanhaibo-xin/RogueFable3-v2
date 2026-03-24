@@ -39,12 +39,18 @@ gs.createShadowMask = function () {
 		color = SHADOW_COLOR,
 		startAlpha = 'ff';
 	
-	// Creating Shadow Mask:
+	// Creating Enhanced Shadow Mask with multiple layers:
 	this.shadowMaskBMP = game.add.bitmapData(width, width);
 	
-	gradient = this.shadowMaskBMP.context.createRadialGradient(radius, radius, radius * 2 * 0.05, radius, radius, radius * 2 * 0.5);
+	// Create more dramatic gradient
+	gradient = this.shadowMaskBMP.context.createRadialGradient(
+		radius, radius, radius * 2 * 0.02,
+		radius, radius, radius * 2 * 0.6
+	);
 	gradient.addColorStop(0, color + '00');
-	gradient.addColorStop(1, color + 'aa');
+	gradient.addColorStop(0.3, color + '44');
+	gradient.addColorStop(0.7, color + '88');
+	gradient.addColorStop(1, color + 'cc');
 	this.shadowMaskBMP.context.fillStyle = gradient;
 	this.shadowMaskBMP.context.fillRect(0, 0, radius * 2, radius * 2);
 	
@@ -52,6 +58,57 @@ gs.createShadowMask = function () {
 	this.shadowMaskSprite.anchor.setTo(0.5, 0.5);
 	
 	this.shadowMaskBMP.dirty = true;
+	
+	// Create additional vignette overlay
+	this.createVignetteOverlay();
+};
+
+// CREATE_VIGNETTE_OVERLAY
+// ************************************************************************************************
+gs.createVignetteOverlay = function () {
+	var width = NUM_SCREEN_TILES_X * TILE_SIZE;
+	var height = NUM_SCREEN_TILES_Y * TILE_SIZE;
+	
+	this.vignetteBMP = game.add.bitmapData(width, height);
+	
+	var ctx = this.vignetteBMP.context;
+	var gradient = ctx.createRadialGradient(
+		width / 2, height / 2, width * 0.3,
+		width / 2, height / 2, width * 0.8
+	);
+	
+	gradient.addColorStop(0, 'rgba(0,0,0,0)');
+	gradient.addColorStop(0.5, 'rgba(0,0,0,0.2)');
+	gradient.addColorStop(1, 'rgba(0,0,0,0.5)');
+	
+	ctx.fillStyle = gradient;
+	ctx.fillRect(0, 0, width, height);
+	
+	this.vignetteSprite = this.createSprite(0, 0, this.vignetteBMP, this.shadowSpritesGroup);
+	this.vignetteSprite.anchor.setTo(0.5, 0.5);
+	this.vignetteSprite.alpha = 0.7;
+};
+
+// UPDATE_ENHANCED_SHADOWS
+// ************************************************************************************************
+gs.updateEnhancedShadows = function () {
+	if (!this.shadowMaskSprite || !gs.pc) return;
+	
+	// Smooth shadow following
+	var targetX = gs.pc.sprite.x;
+	var targetY = gs.pc.sprite.y;
+	
+	// Add subtle breathing effect to shadows
+	var time = game.time.now / 1000;
+	var breathOffset = Math.sin(time * 0.5) * 5;
+	
+	this.shadowMaskSprite.x = targetX + breathOffset;
+	this.shadowMaskSprite.y = targetY;
+	
+	if (this.vignetteSprite) {
+		this.vignetteSprite.x = targetX;
+		this.vignetteSprite.y = targetY;
+	}
 };
 
 // UPDATE_TILE_MAP_SPRITES:

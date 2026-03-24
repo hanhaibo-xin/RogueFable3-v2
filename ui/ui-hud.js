@@ -22,30 +22,36 @@ function HUD() {
 	this.group = game.add.group();
 	this.group.fixedToCamera = true;
 	
+	// Enhanced Background with gradient
+	this.createEnhancedHUDBackground();
+	
 	// Background Sprite:
 	this.menu = gs.createSprite(0, 0, 'HUD', this.group);
 	this.menu.scale.setTo(SCALE_FACTOR, SCALE_FACTOR);
 	
 	
-	// Bars:
-	this.hpBar = gs.createBar(18, 2, HEALTH_BAR_FRAME, this.group);
-	this.mpBar = gs.createBar(158, 2, MANA_BAR_FRAME, this.group);
-	this.foodBar = gs.createBar(startX -280, 2, FOOD_BAR_FRAME, this.group);
+	// Bars with enhanced styling:
+	this.hpBar = this.createEnhancedBar(18, 2, HEALTH_BAR_FRAME, this.group, '#ff4444');
+	this.mpBar = this.createEnhancedBar(158, 2, MANA_BAR_FRAME, this.group, '#4444ff');
+	this.foodBar = this.createEnhancedBar(startX -280, 2, FOOD_BAR_FRAME, this.group, '#ffaa44');
 	
-	this.expBar = gs.createBar(startX - 140, 2, EXP_BAR_FRAME, this.group);
+	this.expBar = this.createEnhancedBar(startX - 140, 2, EXP_BAR_FRAME, this.group, '#44ff44');
 	this.expBar.text.setStyle(LARGE_BOLD_WHITE_FONT);
+	this.addTextGlow(this.expBar.text, '#44ff44');
 	
 	
-	this.coldBar = gs.createBar(18, 28, COLD_BAR_FRAME, this.group);
-	this.rageBar = gs.createBar(158, 2, FOOD_BAR_FRAME, this.group);
+	this.coldBar = this.createEnhancedBar(18, 28, COLD_BAR_FRAME, this.group, '#44ffff');
+	this.rageBar = this.createEnhancedBar(158, 2, FOOD_BAR_FRAME, this.group, '#ff4444');
 	
 	this.poisonBar = gs.createSprite(startX + 10, 4, 'Tileset', this.hpBar.group);
 	this.poisonBar.frame = POISON_BAR_FRAME;
 	this.poisonBar.scale.setTo(SCALE_FACTOR, SCALE_FACTOR);
 	this.hpBar.group.moveUp(this.hpBar.text);
 	
-	// Dungeon Level Text:
+	// Dungeon Level Text with enhanced styling:
     this.zoneLevelText = gs.createText(HUD_START_X / 2, 14, '', LARGE_WHITE_FONT, this.group);
+    this.addTextShadow(this.zoneLevelText);
+    this.addTextGlow(this.zoneLevelText, '#ffffff');
    
 	// Mini Map:
 	this.miniMap = new UIMap(startX + (width - (MINI_MAP_SIZE_X * MINI_MAP_TILE_SIZE)) / 2, 2, this.group);
@@ -656,4 +662,119 @@ HUD.prototype.open = function () {
 // ************************************************************************************************
 HUD.prototype.close = function () { 
 	this.group.visible = false;
+};
+
+// ENHANCED HUD METHODS:
+// ************************************************************************************************
+
+// CREATE_ENHANCED_HUD_BACKGROUND:
+// ************************************************************************************************
+HUD.prototype.createEnhancedHUDBackground = function () {
+	// Create gradient overlay for HUD area
+	var bmp = game.add.bitmapData(SCREEN_WIDTH - HUD_START_X, SCREEN_HEIGHT);
+	var ctx = bmp.context;
+	
+	// Create subtle gradient
+	var grd = ctx.createLinearGradient(0, 0, 0, SCREEN_HEIGHT);
+	grd.addColorStop(0, 'rgba(20, 20, 40, 0.95)');
+	grd.addColorStop(0.5, 'rgba(15, 15, 30, 0.95)');
+	grd.addColorStop(1, 'rgba(10, 10, 20, 0.95)');
+	
+	ctx.fillStyle = grd;
+	ctx.fillRect(0, 0, SCREEN_WIDTH - HUD_START_X, SCREEN_HEIGHT);
+	
+	// Add decorative border line
+	ctx.strokeStyle = 'rgba(100, 100, 150, 0.3)';
+	ctx.lineWidth = 2;
+	ctx.beginPath();
+	ctx.moveTo(2, 0);
+	ctx.lineTo(2, SCREEN_HEIGHT);
+	ctx.stroke();
+	
+	// Create sprite from bitmap data
+	var hudBg = game.add.sprite(HUD_START_X, 0, bmp);
+	hudBg.fixedToCamera = true;
+	this.group.add(hudBg);
+};
+
+// CREATE_ENHANCED_BAR:
+// ************************************************************************************************
+HUD.prototype.createEnhancedBar = function (x, y, frame, group, glowColor) {
+	var bar = gs.createBar(x, y, frame, group);
+	
+	// Add glow effect
+	if (glowColor) {
+		var glow = game.add.graphics(0, 0);
+		glow.beginFill(parseInt(glowColor.replace('#', ''), 16), 0.2);
+		glow.drawRect(0, 0, 70, 12);
+		glow.endFill();
+		
+		// Position glow behind bar
+		glow.x = bar.bar.x - 2;
+		glow.y = bar.bar.y - 2;
+		bar.group.addAt(glow, 0);
+		
+		bar.glow = glow;
+	}
+	
+	// Add text shadow
+	this.addTextShadow(bar.text);
+	
+	return bar;
+};
+
+// ADD_TEXT_SHADOW:
+// ************************************************************************************************
+HUD.prototype.addTextShadow = function (text) {
+	text.setShadow(1, 1, 'rgba(0,0,0,0.8)', 2);
+};
+
+// ADD_TEXT_GLOW:
+// ************************************************************************************************
+HUD.prototype.addTextGlow = function (text, color) {
+	// Create glow effect using multiple shadows
+	var glowColor = color || '#ffffff';
+	text.setShadow(0, 0, glowColor, 4);
+};
+
+// PULSE_BAR_EFFECT:
+// ************************************************************************************************
+HUD.prototype.pulseBarEffect = function (bar, color) {
+	if (!bar.glow) return;
+	
+	// Create pulse animation
+	var originalAlpha = bar.glow.alpha;
+	var tween = game.add.tween(bar.glow);
+	tween.to({ alpha: 0.6 }, 300, Phaser.Easing.Quadratic.Out, true);
+	
+	tween.onComplete.add(function() {
+		game.add.tween(bar.glow).to({ alpha: originalAlpha }, 300, Phaser.Easing.Quadratic.In, true);
+	});
+};
+
+// UPDATE_ENHANCED_BARS:
+// ************************************************************************************************
+HUD.prototype.updateEnhancedBars = function () {
+	// Add subtle pulse to low health bar
+	if (gs.pc.currentHp <= gs.pc.maxHp / 4) {
+		if (!this.hpBar.pulsing) {
+			this.hpBar.pulsing = true;
+			this.startBarPulse(this.hpBar, '#ff0000');
+		}
+	} else {
+		this.hpBar.pulsing = false;
+		if (this.hpBar.pulseTween) {
+			this.hpBar.pulseTween.stop();
+			this.hpBar.glow.alpha = 0.2;
+		}
+	}
+};
+
+// START_BAR_PULSE:
+// ************************************************************************************************
+HUD.prototype.startBarPulse = function (bar, color) {
+	if (!bar.glow) return;
+	
+	bar.pulseTween = game.add.tween(bar.glow);
+	bar.pulseTween.to({ alpha: 0.5 }, 500, Phaser.Easing.Quadratic.InOut, true, 0, -1, true);
 };

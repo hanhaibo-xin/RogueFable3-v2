@@ -510,32 +510,49 @@ function LightCircle (position, color, radius, life, startAlpha) {
 	
 	startAlpha = startAlpha || 'aa';
 	
-	
-	
 	// Properties:
 	this.isAlive = true;
 	this.life = life;
 	this.startLife = life;
 	this.fade = true;
 	this.followSprite = null;
+	this.pulse = true;
+	this.pulsePhase = Math.random() * Math.PI * 2;
+	this.pulseSpeed = 2 + Math.random() * 2;
 	
-	// Bitmap:
+	// Create enhanced gradient with multiple color stops
 	this.bmp = game.add.bitmapData(radius * 2, radius * 2);
-	var gradient = this.bmp.context.createRadialGradient(radius, radius, radius * 2 * 0.05, radius, radius, radius * 2 * 0.5);
-	gradient.addColorStop(0, color + startAlpha);
+	var ctx = this.bmp.context;
+	var gradient = ctx.createRadialGradient(
+		radius, radius, radius * 0.02,
+		radius, radius, radius * 0.8
+	);
+	
+	// Enhanced gradient with multiple stops for better glow
+	gradient.addColorStop(0, color + 'ff');
+	gradient.addColorStop(0.2, color + startAlpha);
+	gradient.addColorStop(0.5, color + '44');
+	gradient.addColorStop(0.8, color + '11');
 	gradient.addColorStop(1, color + '00');
-	this.bmp.context.fillStyle = gradient;
-	this.bmp.context.fillRect(0, 0, radius * 2, radius * 2);
 	
+	ctx.fillStyle = gradient;
+	ctx.fillRect(0, 0, radius * 2, radius * 2);
 	
+	// Add subtle noise texture for realism
+	ctx.globalCompositeOperation = 'overlay';
+	for (let i = 0; i < 50; i++) {
+		let x = Math.random() * radius * 2;
+		let y = Math.random() * radius * 2;
+		let size = Math.random() * 3 + 1;
+		ctx.fillStyle = 'rgba(255,255,255,' + (Math.random() * 0.1) + ')';
+		ctx.fillRect(x, y, size, size);
+	}
 	
 	// Sprite:
 	this.sprite = gs.createSprite(position.x, position.y, this.bmp, gs.projectileSpritesGroup);
 	this.sprite.anchor.setTo(0.5, 0.5);
 	this.sprite.blendMode = PIXI.blendModes.ADD;
 	this.sprite.alpha = 1.0;
-	
-	
 	
 	gs.particleList.push(this);
 	
@@ -553,6 +570,7 @@ LightCircle.prototype.setFollowSprite = function (sprite) {
 // ************************************************************************************************
 LightCircle.prototype.update = function () {
 	var alpha;
+	var time = game.time.now / 1000;
 	
 	// Follow Sprite:
 	if (this.followSprite) {
@@ -569,6 +587,11 @@ LightCircle.prototype.update = function () {
 		this.sprite.alpha = Math.max(0, alpha * 1.0);
 	}
 	
+	// Add pulse effect
+	if (this.pulse && this.life > 10) {
+		var pulseScale = 1 + Math.sin(time * this.pulseSpeed + this.pulsePhase) * 0.1;
+		this.sprite.scale.setTo(pulseScale, pulseScale);
+	}
 	
 	if (!this.noLife && this.life <= 0) {
 		this.destroy();
